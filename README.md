@@ -42,6 +42,6 @@ if __name__ == '__main__':
 ## VIZ
 <br>
 <div align="center">
-      <a><img src="https://github.com/athrunsunny/YOLOv10-M3D/assets/1.jpg" width="3%" alt="1.jpg"></a>
+      <a href="https://github.com/athrunsunny><img src="https://github.com/athrunsunny/YOLOv10-M3D/assets/1.jpg" width="3%" alt="1.jpg"></a>
 </div>
 
