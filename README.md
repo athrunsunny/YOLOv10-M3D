@@ -44,8 +44,7 @@ if __name__ == '__main__':
 
 <details open>
 <summary>backbone</summary>
-This backbone diagram is a rough illustration, and the actual implementation may differ from the diagram
-
+    <div align="center">
 <img src="./assets/1.jpg" width="540">
-
+</div>
 </details>
