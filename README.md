@@ -40,8 +40,12 @@ if __name__ == '__main__':
 ```
 
 ## VIZ
-<br>
-<div align="center">
-      <a href="https://github.com/athrunsunny><img src="https://github.com/athrunsunny/YOLOv10-M3D/assets/1.jpg" width="3%" alt="1.jpg"></a>
-</div>
 
+
+<details open>
+<summary>backbone</summary>
+This backbone diagram is a rough illustration, and the actual implementation may differ from the diagram
+
+<img src="./assets/1.jpg" width="540">
+
+</details>
