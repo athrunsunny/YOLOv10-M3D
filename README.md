@@ -52,7 +52,8 @@ if __name__ == '__main__':
 <details open>
 <summary>viz val</summary>
     <div align="center">
-        <img src="./assets/val_batch1_labels.jpg" width="540">
+        <img src="./assets/val_batch1_labels.jpg" width="540"> </div>
+    <div align="center"> 
         <img src="./assets/val_batch1_pred.jpg" width="540">
     </div>
 </details>
