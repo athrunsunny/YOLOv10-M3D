@@ -42,6 +42,6 @@ if __name__ == '__main__':
 ## VIZ
 <br>
 <div align="center">
-    <img src="./assets/1.jpg" width="540">
+      <a href="https://github.com/ultralytics"><img src="https:https://github.com/athrunsunny/YOLOv10-M3D/assets/1.jpg" width="3%" alt="Ultralytics GitHub"></a>
 </div>
 
