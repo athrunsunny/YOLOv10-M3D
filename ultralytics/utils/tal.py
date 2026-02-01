@@ -566,7 +566,7 @@ class TaskAlignedAssigner3D(TaskAlignedAssigner):
         return bbox_iou(gt_bboxes, pd_bboxes, xywh=False, CIoU=True).squeeze(-1).clamp_(0)
 
     def iou_calculation3d(self, pd_boxes_3d, gt_boxes_3d):
-        from ultralytics.utils.loss import mgiou, mgiou_fast
+        from ultralytics.utils.loss import mgiou_fast
         return mgiou_fast(pd_boxes_3d, gt_boxes_3d)
 
     def select_topk_candidates(self, metrics, topk_mask=None):
@@ -919,3 +919,4 @@ def rbox2dist(
         dist = dist.clamp_(0, reg_max - 0.01)
 
     return dist
+
