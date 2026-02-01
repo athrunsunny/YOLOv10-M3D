@@ -18,44 +18,6 @@ from .metrics import bbox_iou, probiou
 from .tal import bbox2dist, rbox2dist
 
 
-def mgiou(pred, target):
-    # 暂时不支持pred.shape != target.shape的情况
-    def _candidata_axes(corners):
-        if corners.dim() == 2:
-            edge_x = corners[1] - corners[0]
-            edge_y = corners[3] - corners[0]
-            edge_z = corners[4] - corners[0]
-            return torch.stack((edge_x, edge_y, edge_z))
-        elif corners.dim() == 3:
-            edge_x = corners[:, 1, :] - corners[:, 0, :]
-            edge_y = corners[:, 3, :] - corners[:, 0, :]
-            edge_z = corners[:, 4, :] - corners[:, 0, :]
-            return torch.stack((edge_x, edge_y, edge_z), dim=1)
-
-    def _project(corners, axis):
-        scalars = corners @ axis
-        return scalars.min(), scalars.max()
-
-    pred_axes, target_axes = _candidata_axes(pred), _candidata_axes(target)
-    axes = torch.cat([pred_axes, target_axes], dim=1)
-
-    mgiou1d_tensor = torch.zeros(axes.shape[:2])
-    for b in range(pred.shape[0]):
-        mgiou1d = []
-        for axis in axes[b]:
-            min1, max1 = _project(pred[b], axis)
-            min2, max2 = _project(target[b], axis)
-            # Get intersection, union, and convex hull,then compute MGIoU
-            inter = (torch.minimum(max1, max2) - torch.maximum(min1, min2)).clamp(min=0.0)
-            union = (max1 - min1) + (max2 - min2) - inter
-            hull = (torch.maximum(max1, max2) - torch.minimum(min1, min2))
-            mgiou1d.append(inter / union - (hull - union) / hull)
-
-        mgiou1d_tensor[b] = torch.stack(mgiou1d)
-    iou3d = torch.mean(mgiou1d_tensor, dim=1)
-    return torch.nan_to_num(iou3d, nan=0.0)
-
-
 def mgiou_fast(pred, target):
     """MGIoU calculation for 3D bounding boxes with vectorized operations
 
@@ -1994,3 +1956,4 @@ class E2EDetectLoss3D:
 
         # return loss_one2many[0] + loss_one2one[0], loss_one2many[1] + loss_one2one[1]
         return loss_one2many_3d[0] + loss_one2one_3d[0], loss_one2many_3d[1] + loss_one2one_3d[1]
+
