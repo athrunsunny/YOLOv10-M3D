@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
 
 <details open>
-<summary>backbone</summary>
+<summary>viz</summary>
     <div align="center">
 <img src="./assets/1.jpg" width="540">
 </div>
