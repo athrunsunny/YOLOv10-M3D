@@ -1,0 +1,21 @@
+
+#├── Your_kitti_data
+#    ├── ImageSets
+#    ├── testing
+#        ├── calib
+#        ├── image_2
+#    ├── training
+#        ├── calib
+#        ├── image_2
+#        └── label_2
+
+path:  Your_kitti_data # dataset root dir
+train: training/image_2 # train images (relative to 'path') 128 images
+val: training/image_2 # val images (relative to 'path') 128 images
+test: # test images (optional)
+
+# Classes
+names:
+  0: Car
+  1: Pedestrian
+  2: Cyclist
