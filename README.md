@@ -38,3 +38,10 @@ if __name__ == '__main__':
     det_dir = r'val results path'
     eval_from_scrach(gt_dir, det_dir, eval_cls_list=None, ap_mode=40)
 ```
+
+## VIZ
+<br>
+<div align="center">
+    <img src="./assets/1.jpg" width="540">
+</div>
+
