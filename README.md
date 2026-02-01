@@ -15,5 +15,5 @@ The directory will be as follows:
             ├── image_2
             └── label_2
 
-Write the path to "data_dir" and "label_dir" in lib/kitti.yaml.
+Write the path to "path" in ultralytics/cfg/datasets/KITTI_3D.yaml.
 
