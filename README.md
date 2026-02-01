@@ -17,3 +17,8 @@ The directory will be as follows:
 
 Write the path to "path" in ultralytics/cfg/datasets/KITTI_3D.yaml.
 
+
+## Train
+~~~
+python train_3d.py
+~~~
