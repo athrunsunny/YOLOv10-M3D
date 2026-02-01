@@ -1,7 +1,7 @@
 # YOLOv10-M3D
 
 ## Remarks
-This project is reproduce from LeAD-M3D, 3D detection has been implemented, but the depth feature of CM3D has not been implemented yet;
+This project is reproduce from LeAD-M3D, 3D detection has been implemented, but the depth feature of CM3D has not been implemented yet; I will continue to improve knowledge distillation in the future
 
 ## Dataset
 Download the KITTI dataset from [**KITTI website**](https://www.cvlibs.net/datasets/kitti/index.php)
