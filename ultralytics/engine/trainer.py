@@ -62,6 +62,7 @@ from ultralytics.utils.torch_utils import (
     unwrap_model,
 )
 
+from ultralytics.engine.distillation import YOLOv8DistillationLoss
 
 class BaseTrainer:
     """A base class for creating trainers.
@@ -121,6 +122,20 @@ class BaseTrainer:
             overrides (dict, optional): Configuration overrides.
             _callbacks (list, optional): List of callback functions.
         """
+        # ============================== add distillation parameter ====================================================
+        # 指定教师模型和损失函数类型（蒸馏方式）
+        if overrides and "distillation" in overrides:
+            self.distillation = overrides["distillation"]
+            overrides.pop("distillation")
+        else:
+            self.distillation = None
+        if overrides and "loss_type" in overrides:
+            self.loss_type = overrides['loss_type']
+            overrides.pop("loss_type")
+        else:
+            self.loss_type = None
+        # ============================== add distillation parameter ====================================================
+        
         self.hub_session = overrides.pop("session", None)  # HUB
         self.args = get_cfg(cfg, overrides)
         self.check_resume(overrides)
@@ -266,6 +281,29 @@ class BaseTrainer:
         """Build dataloaders and optimizer on correct rank process."""
         ckpt = self.setup_model()
         self.model = self.model.to(self.device)
+        
+        # ============================== add distillation parameter ====================================================
+        # 将教师模型加载到学生模型设备上
+        if self.distillation is not None:
+            # teacher 放到相同 device
+            self.distillation = self.distillation.to(self.device).eval()
+            for p in self.distillation.parameters():  # 彻底冻结
+                p.requires_grad_(False)
+            # 创建蒸馏损失实例（这里就会 new FeatureLoss）
+            self.kd_loss = YOLOv8DistillationLoss(self.model, self.distillation, distiller=self.loss_type, device=self.device)
+            
+            # 计算并打印 KD-loss 相关的参数量
+            if self.kd_loss.distill_type.lower() == "feature":
+                # 统计 feature‐head（D_loss_fn）里的参数量
+                kd_params = sum(p.numel() for p in self.kd_loss.D_loss_fn.parameters())
+                LOGGER.info(f"{colorstr('Feature-level KD params:')} {kd_params/1e6:.2f} M")
+            else:
+                # logit‐level KD 只是额外计算一个 loss，没有新参数
+                LOGGER.info(f"{colorstr('Logit-level KD enabled, no extra sub-module parameters')}")
+        else:
+            self.kd_loss = None
+        # ============================== add distillation parameter ====================================================
+        
         self.set_model_attributes()
 
         # Compile model
@@ -402,6 +440,16 @@ class BaseTrainer:
                 LOGGER.info(self.progress_string())
                 pbar = TQDM(enumerate(self.train_loader), total=nb)
             self.tloss = None
+            
+            # ============================== add distillation parameter ================================================
+            self.kd_loss_sum = 0.0  # 蒸馏损失
+            self.or_loss_sum = 0.0  # 原始损失
+            self.loss_count = 0     # epoch的step数
+            # 为教师模型注册hook函数
+            if self.kd_loss is not None:
+                self.kd_loss.register_hook()
+            # ============================== add distillation parameter ================================================
+            
             for i, batch in pbar:
                 self.run_callbacks("on_train_batch_start")
                 # Warmup
@@ -430,6 +478,30 @@ class BaseTrainer:
                     if RANK != -1:
                         self.loss *= self.world_size
                     self.tloss = self.loss_items if self.tloss is None else (self.tloss * i + self.loss_items) / (i + 1)
+                    
+                    # ============================== add distillation parameter ========================================
+                    if self.distillation is not None:
+                        with torch.no_grad():
+                            _ = self.distillation(batch['img'])
+ 
+                        bs = batch['img'].shape[0]                  # 本进程 mini-batch
+                        ws = self.world_size if RANK != -1 else 1        # DDP 时为 8、16…；单机=1
+                        scale = bs * ws
+                        
+                        # 获取蒸馏损失及其衰减权重
+                        raw_d_loss_weight = self.kd_loss.get_kd_weight(epoch=self.epoch, total_epochs=self.epochs)
+                        raw_d_loss = self.kd_loss.get_loss() * raw_d_loss_weight
+                        
+                        self.kd_loss_sum += raw_d_loss.item()
+                        self.or_loss_sum += (self.loss.detach().item()) / scale if scale else 0
+                        self.loss_count += 1
+ 
+                        self.d_loss = raw_d_loss * scale
+                        # print(f"or_loss: {self.loss / scale:.2f}, kd_loss: {raw_d_loss:.2f}, ratio: {self.d_loss / self.loss:.2f} kd_weight: {raw_d_loss_weight:.6f}")
+ 
+                        self.loss += self.d_loss
+                    # ============================== add distillation parameter ========================================
+                
 
                 # Backward
                 self.scaler.scale(self.loss).backward()
@@ -469,6 +541,22 @@ class BaseTrainer:
             if hasattr(unwrap_model(self.model).criterion, "update"):
                 unwrap_model(self.model).criterion.update()
 
+            # ============================== add distillation parameter ================================================
+            if self.kd_loss is not None:
+                self.kd_loss.remove_handle_()
+ 
+            if self.loss_count:
+                kd_mean = self.kd_loss_sum / self.loss_count
+                or_mean = self.or_loss_sum / self.loss_count
+                ratio = kd_mean / or_mean if or_mean else 0
+                # 保存到 trainer 上，给回调用
+                self.tb_kd_mean = kd_mean
+                self.tb_or_mean = or_mean
+                self.tb_kd_ratio = ratio
+                print(f"kd_mean: {kd_mean:.2f}, or_mean: {or_mean:.2f}, ratio: {ratio:.2f}")
+                self.run_callbacks("on_show_distillation_loss")    # 触发回调
+            # ============================== add distillation parameter ================================================
+            
             self.lr = {f"lr/pg{ir}": x["lr"] for ir, x in enumerate(self.optimizer.param_groups)}  # for loggers
 
             self.run_callbacks("on_train_epoch_end")
