@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # # 加载剪枝后的模型权重文件
     # teacher_model_path = r"yolov8m-pose-15.pt"
     # student_model_path = "yolov8s-pose-15.pt"
-    # # student_model_path = r"./train_di_cwd/weights/last.pt"
+
     # model_s = YOLO(student_model_path)
     # model_t = YOLO(teacher_model_path)
      
