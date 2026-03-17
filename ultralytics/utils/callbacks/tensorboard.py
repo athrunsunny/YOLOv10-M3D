@@ -111,12 +111,49 @@ def on_fit_epoch_end(trainer) -> None:
     _log_scalars(trainer.metrics, trainer.epoch + 1)
 
 
+# callbacks = (
+#     {
+#         "on_pretrain_routine_start": on_pretrain_routine_start,
+#         "on_train_start": on_train_start,
+#         "on_fit_epoch_end": on_fit_epoch_end,
+#         "on_train_epoch_end": on_train_epoch_end,
+#     }
+#     if SummaryWriter
+#     else {}
+# )
+
+ 
+# ============================== show distillation loss in tensorboard =================================================
+def on_show_distillation_loss(trainer):
+    if WRITER:
+        """
+        numpy>=1.18.5,<1.24.0
+        protobuf<4.21.3
+        """
+        show_error = True
+        try:
+            WRITER.add_scalar('distill/kd_loss',  trainer.tb_kd_mean,  trainer.epoch + 1)
+            WRITER.add_scalar('distill/or_loss',  trainer.tb_or_mean,  trainer.epoch + 1)
+            WRITER.add_scalar('distill/total_loss',  trainer.tb_kd_mean + trainer.tb_or_mean,  trainer.epoch + 1)
+            WRITER.add_scalar('distill/ratio',    trainer.tb_kd_ratio, trainer.epoch + 1)
+        except Exception as e:
+            if show_error:
+                print(f"\033[1;31mERROR\033[0m: plot distillation loss failed. Cause by: {e}")
+            show_error = False
+# ============================== show distillation loss in tensorboard =================================================
+ 
 callbacks = (
     {
         "on_pretrain_routine_start": on_pretrain_routine_start,
         "on_train_start": on_train_start,
         "on_fit_epoch_end": on_fit_epoch_end,
         "on_train_epoch_end": on_train_epoch_end,
+        # ============================== show bn weights and bias distribution in tensorboard ==========================
+        # "on_show_bn_weights_and_bias": on_show_bn_weights_and_bias,
+        # ============================== show bn weights and bias distribution in tensorboard ==========================
+        # ============================== show distillation loss in tensorboard =========================================
+        "on_show_distillation_loss": on_show_distillation_loss,
+        # ============================== show distillation loss in tensorboard =========================================
     }
     if SummaryWriter
     else {}
